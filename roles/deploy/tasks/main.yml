@@ -1,0 +1,50 @@
+---
+
+  - name: Update and Install python
+    apt:
+      name: python
+      update_cache: yes
+    become: true
+  
+  - name: Update and Install pip
+    apt:
+      name: python-pip
+      update_cache: yes
+    become: yes
+
+  - name: install flask with pip
+    pip: name=flask
+
+  - name: ensure httplib2 is installed
+    pip: name=httplib2 state=present
+
+  - name: webapp directory
+    file:
+       path: /home/ubuntu/ansible_webapp
+       state: directory
+       mode: 0755
+
+  - name: Clone bitbucket repo
+    git:
+      repo: https://github.com/rahulr08/webservice.git
+      dest: /home/ubuntu/ansible_webapp/
+      version: master
+  
+  - name: register flask pid
+    shell : ps -ef | grep -w '\bpython /home/ubuntu/ansible_webapp/webapp_flask/webapp/webapp.py\b' | awk '{print $2}'
+    register: flask_pid
+    ignore_errors: yes
+
+  - name: Stop flask application
+    shell: kill -kill "{{flask_pid.stdout}}"
+    ignore_errors: yes
+
+  - name: Start Flask webapp 
+    shell: nohup python /home/ubuntu/ansible_webapp/webapp_flask/webapp/webapp.py &
+
+  - name: Test if the webapp is running
+    uri:
+      url: http://35.183.182.102:5000/monitor
+      return_content: yes
+    register: this
+    failed_when: "'UP' not in this.content"

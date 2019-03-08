@@ -1,0 +1,4 @@
+---
+- hosts: flask
+  roles:
+    - {role: deploy}
