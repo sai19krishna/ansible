@@ -20,31 +20,36 @@
 
   - name: webapp directory
     file:
-       path: /home/ubuntu/ansible_webapp
+       path: "{{webapp_directory }}"
        state: directory
        mode: 0755
 
   - name: Clone bitbucket repo
     git:
-      repo: https://github.com/rahulr08/webservice.git
-      dest: /home/ubuntu/ansible_webapp/
+      repo: "{{git_repo}}"
+      dest: "{{webapp_directory }}"
       version: master
   
   - name: register flask pid
     shell : ps -ef | grep -w '\bpython /home/ubuntu/ansible_webapp/webapp_flask/webapp/webapp.py\b' | awk '{print $2}'
     register: flask_pid
     ignore_errors: yes
+    tags: [ 'restart', 'stop' ]
 
   - name: Stop flask application
     shell: kill -kill "{{flask_pid.stdout}}"
     ignore_errors: yes
+    tags: [ 'restart', 'stop' ]
 
   - name: Start Flask webapp 
     shell: nohup python /home/ubuntu/ansible_webapp/webapp_flask/webapp/webapp.py &
+    notify: Print message
+    tags: [ 'restart', 'start' ]
 
   - name: Test if the webapp is running
     uri:
-      url: http://35.183.182.102:5000/monitor
+      url: "{{ url_monitor }}"
       return_content: yes
     register: this
     failed_when: "'UP' not in this.content"
+    tags: [ 'restart', 'test' ]

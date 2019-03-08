@@ -1,0 +1,5 @@
+---
+
+  - name: Print message
+    debug: 
+      msg: "Test is now completed"
